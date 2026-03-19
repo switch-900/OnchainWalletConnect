@@ -1196,6 +1196,19 @@ export function getAllWalletInfo() {
 
 const MOBILE_DEEPLINKS_STORAGE_KEY = 'nexus.mobileWalletDeepLinks.v1';
 
+// Optional runtime override for additional deep-link schemes:
+// window.NEXUS_MOBILE_WALLET_ALLOWED_SCHEMES = {
+//   WalletName: ['scheme1', 'scheme2'],
+//   '*': ['sharedscheme']
+// }
+const DEFAULT_MOBILE_WALLET_ALLOWED_SCHEMES = Object.freeze({
+  Phantom: ['https'],
+  Xverse: ['https'],
+  UniSat: ['unisat'],
+  MagicEden: ['magiceden'],
+  OKX: ['okx', 'https']
+});
+
 // Built-in defaults are intentionally minimal and only added when backed by official docs.
 // Phantom docs (Jan 2026): https://docs.phantom.com/phantom-deeplinks/other-methods/browse
 // UniSat docs: https://docs.unisat.io/developer-support/open-api-documentation/unisat-wallet/connect-with-unisat-mobile-wallet
@@ -1431,6 +1444,67 @@ export function isMobileWalletOption(walletName) {
   return !!getMobileConnectUrl(walletName);
 }
 
+function _getUrlScheme(url) {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol.replace(':', '').toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function _readMobileAllowedSchemes() {
+  if (typeof window === 'undefined') return {};
+  const runtime = window.NEXUS_MOBILE_WALLET_ALLOWED_SCHEMES;
+  if (runtime && typeof runtime === 'object') return runtime;
+  return {};
+}
+
+function _getAllowedDeepLinkSchemes(walletName) {
+  const out = new Set(['https']);
+  const add = (value) => {
+    if (typeof value !== 'string') return;
+    const v = value.trim().toLowerCase().replace(/:$/, '');
+    if (v) out.add(v);
+  };
+
+  const walletDefaults = DEFAULT_MOBILE_WALLET_ALLOWED_SCHEMES?.[walletName];
+  if (Array.isArray(walletDefaults)) {
+    for (const s of walletDefaults) add(s);
+  }
+
+  const runtime = _readMobileAllowedSchemes();
+  const wildcard = runtime?.['*'];
+  const walletSpecific = runtime?.[walletName];
+
+  if (Array.isArray(wildcard)) {
+    for (const s of wildcard) add(s);
+  } else {
+    add(wildcard);
+  }
+
+  if (Array.isArray(walletSpecific)) {
+    for (const s of walletSpecific) add(s);
+  } else {
+    add(walletSpecific);
+  }
+
+  // Backward-compatible fallback for custom walletName:// templates.
+  if (typeof walletName === 'string' && walletName.trim()) {
+    add(walletName.toLowerCase());
+  }
+
+  return out;
+}
+
+function _isSafeWalletDeepLink(walletName, deepLink) {
+  const scheme = _getUrlScheme(deepLink);
+  if (!scheme) return false;
+  if (scheme === 'javascript' || scheme === 'data' || scheme === 'vbscript') return false;
+  return _getAllowedDeepLinkSchemes(walletName).has(scheme);
+}
+
 function _readMobileDeepLinks() {
   if (typeof window === 'undefined') return {};
 
@@ -1484,7 +1558,7 @@ export function getMobileConnectUrl(walletName, targetUrl) {
 
   // Validate URL is HTTP(S) — prevent javascript:, data:, or other dangerous URI schemes
   if (!_isValidHttpUrl(url)) {
-    console.warn(`⚠️ getMobileConnectUrl: rejected non-HTTP URL: ${String(url).slice(0, 50)}`);
+    debugWarn(`getMobileConnectUrl rejected non-HTTP target URL: ${String(url).slice(0, 50)}`);
     return null;
   }
 
@@ -1494,12 +1568,22 @@ export function getMobileConnectUrl(walletName, targetUrl) {
   const encodedUrl = encodeURIComponent(url);
   if (typeof template === 'function') {
     try {
-      return template(url);
+      const resolved = template(url);
+      if (!_isSafeWalletDeepLink(walletName, resolved)) {
+        debugWarn(`Rejected deep link for ${walletName}: disallowed scheme`);
+        return null;
+      }
+      return resolved;
     } catch {
       return null;
     }
   }
-  return template.replace(/\{url\}/g, encodedUrl);
+  const resolved = template.replace(/\{url\}/g, encodedUrl);
+  if (!_isSafeWalletDeepLink(walletName, resolved)) {
+    debugWarn(`Rejected deep link for ${walletName}: disallowed scheme`);
+    return null;
+  }
+  return resolved;
 }
 
 export async function openMobileWallet(walletName, targetUrl) {
@@ -1519,6 +1603,9 @@ export async function openMobileWallet(walletName, targetUrl) {
         'Could not build a Magic Eden deep link.\n\n' +
         'Open Magic Eden and use the Browser tab to open this site.'
       );
+    }
+    if (!_isSafeWalletDeepLink('MagicEden', deepLink)) {
+      throw new Error('Magic Eden deep link is not allowed by current security policy');
     }
     window.location.href = deepLink;
     return deepLink;
@@ -1541,6 +1628,9 @@ export async function openMobileWallet(walletName, targetUrl) {
       window.sessionStorage?.setItem('nexus.pendingMobileWallet', walletName);
     }
   } catch {}
+  if (!_isSafeWalletDeepLink(walletName, deepLink)) {
+    throw new Error(`${walletName} deep link is not allowed by current security policy`);
+  }
   window.location.href = deepLink;
   return deepLink;
 }

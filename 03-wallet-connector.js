@@ -173,7 +173,7 @@ export function getBitcoinProvider() {
     for (const entry of window.btc_providers) {
       const provider = extractProviderFromEntry(entry);
       if (provider) {
-        debugLog(`✅ Found Bitcoin provider: ${entry.name || entry.id}`);
+        debugLog(`Found Bitcoin provider: ${entry.name || entry.id}`);
         return provider;
       }
     }
@@ -181,30 +181,29 @@ export function getBitcoinProvider() {
   
   // Priority 2: Check Magic Eden (uses direct connect(), not in btc_providers)
   if (window.magicEden?.bitcoin?.isMagicEden) {
-    debugLog('✅ Using window.magicEden.bitcoin (Magic Eden)');
+    debugLog('Using window.magicEden.bitcoin (Magic Eden)');
     return window.magicEden.bitcoin;
   }
 
   // Priority 2.5: Check BitmapWallet inpage provider
   if (window.bitmapWallet && typeof window.bitmapWallet.request === 'function') {
-    debugLog('✅ Using window.bitmapWallet (BitmapWallet)');
+    debugLog('Using window.bitmapWallet (BitmapWallet)');
     return window.bitmapWallet;
   }
   
   // Priority 3: Direct window.BitcoinProvider (fallback)
   if (window.BitcoinProvider && typeof window.BitcoinProvider.request === 'function') {
-    debugLog('✅ Using window.BitcoinProvider');
+    debugLog('Using window.BitcoinProvider');
     return window.BitcoinProvider;
   }
   
   // Priority 4: Xverse-specific location (legacy)
   if (window.XverseProviders?.BitcoinProvider) {
-    debugLog('✅ Using window.XverseProviders.BitcoinProvider');
+    debugLog('Using window.XverseProviders.BitcoinProvider');
     return window.XverseProviders.BitcoinProvider;
   }
   
-  // eslint-disable-next-line no-console
-  console.warn('❌ No Bitcoin wallet provider found');
+  debugWarn('No Bitcoin wallet provider found');
   return null;
 }
 
@@ -226,7 +225,7 @@ export async function getAddresses({ purposes, message, network } = {}) {
   
   // Check if this is Magic Eden (uses direct connect() with JWT)
   if (window.magicEden?.bitcoin && provider === window.magicEden.bitcoin) {
-    debugLog('🔍 Using Magic Eden direct connect()...');
+    debugLog('Using Magic Eden direct connect()');
     return await connectMagicEden(purposes, message);
   }
   
@@ -236,7 +235,7 @@ export async function getAddresses({ purposes, message, network } = {}) {
   
   for (const methodName of methodNames) {
     try {
-      debugLog(`🔍 Trying ${methodName}...`);
+      debugLog(`Trying ${methodName}`);
 
       const params = {
         purposes: purposes || [AddressPurpose.Payment, AddressPurpose.Ordinals],
@@ -262,11 +261,11 @@ export async function getAddresses({ purposes, message, network } = {}) {
       }
       
       // If we got a response but it's not in expected format, try next method
-      debugWarn(`⚠️ ${methodName} returned unexpected format, trying next method...`);
+      debugWarn(`${methodName} returned unexpected format, trying next method`);
       lastError = new Error(`${methodName} returned unexpected format`);
       
     } catch (error) {
-      debugWarn(`⚠️ ${methodName} failed:`, error?.message || String(error));
+      debugWarn(`${methodName} failed:`, error?.message || String(error));
       lastError = error;
       // Try next method
     }
@@ -291,7 +290,7 @@ async function connectMagicEden(purposes, message) {
   
   const token = createUnsecuredToken(payload);
 
-  debugLog('🔍 Calling Magic Eden connect() with JWT token...');
+  debugLog('Calling Magic Eden connect() with JWT token');
   const response = await provider.connect(token);
   
   // Magic Eden returns {addresses: [...]}

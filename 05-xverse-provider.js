@@ -240,23 +240,23 @@ export class XverseProvider extends BaseWalletProvider {
       connect: true,                    // wallet_connect via request()
       getAddress: true,                 // getAddresses via request()
       getPublicKey: true,               // From wallet_connect response
-      getBalance: true,                 // ✅ CONFIRMED: request('getBalance')
+      getBalance: true,                 //  CONFIRMED: request('getBalance')
       signMessage: true,                // signMessage via request()
-      signPsbt: true,                   // ✅ signPsbt() wrapper for signTransaction
-      signPsbts: true,                  // ✅ signPsbts() wrap  per for signMultipleTransactions
-      pushPsbt: false,                  // ❌ No broadcast methods (use extension/proxy)
-      pushTx: false,                    // ❌ No broadcast methods (use extension/proxy)
+      signPsbt: true,                   //  signPsbt() wrapper for signTransaction
+      signPsbts: true,                  //  signPsbts() wrap  per for signMultipleTransactions
+      pushPsbt: false,                  //  No broadcast methods (use extension/proxy)
+      pushTx: false,                    //  No broadcast methods (use extension/proxy)
       signTransaction: true,            // signTransaction (Xverse name for signPsbt)
       signMultipleTransactions: true,   // signMultipleTransactions
       sendBtcTransaction: true,         // sendTransfer via request()
-      getInscriptions: true,            // ✅ CONFIRMED: request('ord_getInscriptions')
+      getInscriptions: true,            //  CONFIRMED: request('ord_getInscriptions')
       sendInscription: true,            // ord_sendInscriptions via request()
-      createInscription: true,          // ✅ CONFIRMED: createInscription()
-      createRepeatInscriptions: true,   // ✅ CONFIRMED: createRepeatInscriptions()
-      getUtxos: false,                  // ❌ NOT SUPPORTED: Xverse does not provide UTXO access
-      getBitcoinUtxos: false,           // ❌ NOT SUPPORTED: No UTXO methods available
-      getCapabilities: true,            // ✅ NEW: wallet capabilities info
-      runes: true,                      // ✅ CONFIRMED: runes_getBalance, runes_transfer, mint, etch
+      createInscription: true,          //  CONFIRMED: createInscription()
+      createRepeatInscriptions: true,   //  CONFIRMED: createRepeatInscriptions()
+      getUtxos: false,                  //  NOT SUPPORTED: Xverse does not provide UTXO access
+      getBitcoinUtxos: false,           //  NOT SUPPORTED: No UTXO methods available
+      getCapabilities: true,            //  NEW: wallet capabilities info
+      runes: true,                      //  CONFIRMED: runes_getBalance, runes_transfer, mint, etch
       eventListeners: true,             // addListener for events
       networkSwitch: false,             // No network switching
       brc20: false,                     // No BRC-20 support
@@ -367,11 +367,11 @@ export class XverseProvider extends BaseWalletProvider {
             message,
             network: { type: 'Mainnet' }
           });
-          console.warn('⚠️ Xverse returned 0 addresses; retrying via provider.connect(token)...');
+          console.warn('Xverse returned 0 addresses; retrying via provider.connect(token)...');
           const res2 = await provider.connect(token);
           addresses = _coerceAddressesFromResponse(res2);
         } catch (eConnect) {
-          console.warn('⚠️ Xverse provider.connect(token) fallback failed:', eConnect?.message || eConnect);
+          console.warn('Xverse provider.connect(token) fallback failed:', eConnect?.message || eConnect);
         }
       }
 
@@ -407,7 +407,7 @@ export class XverseProvider extends BaseWalletProvider {
       this.address = this.ordinalsAddress; // Use ordinals address as primary
       this.isConnected = true;
 
-      console.log('✅ Xverse connected:', {
+      console.log('Xverse connected:', {
         ordinals: this.ordinalsAddress,
         payment: this.paymentAddress,
         ordinalsPublicKey: this.ordinalsPublicKey,
@@ -426,7 +426,7 @@ export class XverseProvider extends BaseWalletProvider {
       const wrapped = _asError(error, 'Xverse connection failed');
       try {
         // Use real console for the failure path (no secrets, just message).
-        globalThis.console?.warn?.('❌', wrapped.message);
+        debugWarn(wrapped.message);
       } catch {
         // ignore
       }
@@ -453,7 +453,7 @@ export class XverseProvider extends BaseWalletProvider {
     try {
       const provider = this.getProvider();
       
-      console.log('🔍 Xverse: Requesting getAddresses with purposes:', purposes);
+      console.log('Xverse: Requesting getAddresses with purposes:', purposes);
       
       // Use Sats Connect getAddresses method
       const response = await _requestCompat(provider, 'getAddresses', {
@@ -461,7 +461,7 @@ export class XverseProvider extends BaseWalletProvider {
         message: 'App requesting addresses'
       });
       
-      console.log('✅ Xverse getAddresses response:', response);
+      console.log('Xverse getAddresses response:', response);
       
       if (response && response.result && response.result.addresses) {
         return response.result.addresses;
@@ -481,7 +481,7 @@ export class XverseProvider extends BaseWalletProvider {
         }
       ];
     } catch (error) {
-      console.warn('⚠️ Xverse getAddresses failed, using cached addresses:', error);
+      console.warn('Xverse getAddresses failed, using cached addresses:', error);
       
       // Return cached addresses from connection
       return [
@@ -506,17 +506,17 @@ export class XverseProvider extends BaseWalletProvider {
       const provider = this.getProvider();
       
       if (!provider || typeof provider.request !== 'function') {
-        console.warn('⚠️ Xverse provider does not have request method');
+        console.warn('Xverse provider does not have request method');
         return 0;
       }
       
       // Use Xverse's getBalance method via request
       // According to sats-connect docs: request('getBalance', undefined)
       // The wallet automatically returns balance for the connected payment address
-      console.log('🔍 Xverse: Requesting getBalance...');
+      console.log('Xverse: Requesting getBalance...');
       const response = await _requestCompat(provider, 'getBalance', undefined);
       
-      console.log('🔍 Xverse getBalance response:', response);
+      console.log('Xverse getBalance response:', response);
       
       // Handle both JSON-RPC 2.0 format and sats-connect format
       let balance;
@@ -530,12 +530,12 @@ export class XverseProvider extends BaseWalletProvider {
       } else if (response && response.status === 'error') {
         throw new Error(response.error?.message || 'Failed to get balance from Xverse');
       } else {
-        console.warn('⚠️ Unexpected response format from Xverse getBalance:', response);
+        console.warn('Unexpected response format from Xverse getBalance:', response);
         return 0;
       }
       
       if (balance && balance.total) {
-        console.log('💰 Xverse balance (sats):', balance);
+        console.log('Xverse balance (sats):', balance);
         
         // balance = { confirmed: "123456", unconfirmed: "0", total: "123456" }
         // All values are strings in satoshis — return normalized sats object.
@@ -546,11 +546,11 @@ export class XverseProvider extends BaseWalletProvider {
           total: parseInt(balance.total, 10)
         };
       } else {
-        console.warn('⚠️ No balance data in response');
+        console.warn('No balance data in response');
         return { confirmed: 0, unconfirmed: 0, total: 0 };
       }
     } catch (error) {
-      console.error('❌ Xverse getBalance failed:', error);
+      console.error('Xverse getBalance failed:', error);
       // Throw to let caller handle — don't return non-standard error objects
       throw new Error(`Xverse getBalance failed: ${error.message || 'Unknown error'}`);
     }
@@ -563,7 +563,7 @@ export class XverseProvider extends BaseWalletProvider {
       const provider = this.getProvider();
       const address = this.ordinalsAddress || this.address;
       
-      console.log(`📦 Xverse: Fetching inscriptions for ${address} (offset: ${offset}, limit: ${limit})`);
+      console.log(` Xverse: Fetching inscriptions for ${address} (offset: ${offset}, limit: ${limit})`);
       
       // Use wallet connector request method (JSON-RPC pattern)
       const response = await _requestCompat(provider, 'ord_getInscriptions', {
@@ -571,7 +571,7 @@ export class XverseProvider extends BaseWalletProvider {
         limit: limit
       });
       
-      console.log('✅ Xverse inscriptions response:', response);
+      console.log('Xverse inscriptions response:', response);
       
       // Check for error in response
       if (response && response.status === 'error') {
@@ -595,11 +595,11 @@ export class XverseProvider extends BaseWalletProvider {
         outputValue: inscription.outputValue || inscription.output_value
       }));
     } catch (error) {
-      console.error('❌ Failed to fetch Xverse inscriptions:', error);
+      console.error('Failed to fetch Xverse inscriptions:', error);
       throw error;
     }
   }
-  // ✅ getAllInscriptions() inherited from BaseWalletProvider
+  //  getAllInscriptions() inherited from BaseWalletProvider
   // Provides automatic pagination - no need to override
 
 
@@ -616,7 +616,7 @@ export class XverseProvider extends BaseWalletProvider {
         throw new Error('Xverse provider not available');
       }
 
-      console.log('🔏 Xverse: Input options:', JSON.stringify(options, null, 2));
+      console.log('Xverse: Input options:', JSON.stringify(options, null, 2));
 
       // Prefer not to rely on wallet-broadcast for complex flows, but if the caller
       // explicitly requests native broadcast (e.g. simple single-tx sends), allow it.
@@ -642,7 +642,7 @@ export class XverseProvider extends BaseWalletProvider {
       let inputsToSign = [];
       
       if (options.toSignInputs && Array.isArray(options.toSignInputs)) {
-        console.log('🔧 Converting toSignInputs to sats-connect inputsToSign format');
+        console.log('Converting toSignInputs to sats-connect inputsToSign format');
         
         // Two parallel groupings:
         //   signInputsByAddress  → { address: [indexes] }   for the legacy signInputs object format (Sats Connect v1)
@@ -657,11 +657,11 @@ export class XverseProvider extends BaseWalletProvider {
             const isOrdinals = input.address === this.ordinalsAddress;
             
             if (!isPayment && !isOrdinals) {
-              console.warn(`⚠️ Unknown address in input ${input.index}: ${input.address}`);
+              console.warn(` Unknown address in input ${input.index}: ${input.address}`);
               console.warn(`   Expected payment: ${this.paymentAddress}`);
               console.warn(`   Expected ordinals: ${this.ordinalsAddress}`);
             } else {
-              console.log(`✅ Input ${input.index}: ${isPayment ? 'PAYMENT' : 'ORDINALS'} address`);
+              console.log(` Input ${input.index}: ${isPayment ? 'PAYMENT' : 'ORDINALS'} address`);
             }
             
             // Legacy signInputs: group by address only
@@ -689,8 +689,8 @@ export class XverseProvider extends BaseWalletProvider {
         // inputsToSign uses the sighash-aware grouping (Sats Connect v2 format)
         inputsToSign = Object.values(signInputsByAddrSigHash);
         
-        console.log('🔧 Converted inputsToSign (with sigHash where applicable):', JSON.stringify(inputsToSign));
-        console.log('🔑 Address/PubKey mapping:');
+        console.log('Converted inputsToSign (with sigHash where applicable):', JSON.stringify(inputsToSign));
+        console.log('Address/PubKey mapping:');
         inputsToSign.forEach(item => {
           if (item.address === this.paymentAddress) {
             console.log(`   ${item.address} (PAYMENT) -> pubkey: ${this.paymentPublicKey}`);
@@ -701,12 +701,12 @@ export class XverseProvider extends BaseWalletProvider {
       }
       // Fallback: Handle signInputs format from normalizer
       else if (options.signInputs && typeof options.signInputs === 'object') {
-        console.log('🔧 Converting signInputs to inputsToSign format');
+        console.log('Converting signInputs to inputsToSign format');
         inputsToSign = Object.entries(options.signInputs).map(([address, signingIndexes]) => ({
           address,
           signingIndexes
         }));
-        console.log('🔧 Converted from signInputs:', inputsToSign);
+        console.log('Converted from signInputs:', inputsToSign);
       }
 
       // XVERSE/SATS-CONNECT FORMAT per docs: https://docs.xverse.app/sats-connect/bitcoin-methods/signpsbt
@@ -714,13 +714,13 @@ export class XverseProvider extends BaseWalletProvider {
       // Convert inputsToSign array format to signInputs object format
       const signInputs = {};
       inputsToSign.forEach(item => {
-        // ✅ CRITICAL FIX: Only include addresses that actually have inputs to sign!
+        //  Important behavior note: Only include addresses that actually have inputs to sign!
         // Xverse returns "No taproot scripts signed" if we pass an address with no inputs
         if (Array.isArray(item.signingIndexes) && item.signingIndexes.length > 0) {
           signInputs[item.address] = item.signingIndexes;
-          console.log(`✅ Including ${item.address.slice(0, 10)}... with ${item.signingIndexes.length} input(s): [${item.signingIndexes.join(', ')}]`);
+          console.log(` Including ${item.address.slice(0, 10)}... with ${item.signingIndexes.length} input(s): [${item.signingIndexes.join(', ')}]`);
         } else {
-          console.warn(`⚠️ Skipping address ${item.address} - no inputs to sign (${item.signingIndexes?.length || 0} indexes)`);
+          console.warn(` Skipping address ${item.address} - no inputs to sign (${item.signingIndexes?.length || 0} indexes)`);
         }
       });
       
@@ -729,15 +729,15 @@ export class XverseProvider extends BaseWalletProvider {
         throw new Error('signInputs is empty - no addresses with inputs to sign!');
       }
       
-      console.log('✅ Final signInputs (filtered):', JSON.stringify(signInputs, null, 2));
+      console.log('Final signInputs (filtered):', JSON.stringify(signInputs, null, 2));
       
-      // � CRITICAL FIX: Xverse/Sats Connect expects BASE64, but we're receiving HEX!
+      // � Important behavior note: Xverse/Sats Connect expects BASE64, but we're receiving HEX!
       // The variable name "psbtHex" is misleading - check format and convert if needed
       const isHex = /^[0-9a-fA-F]+$/.test(psbtHex);
       const isBase64 = /^[A-Za-z0-9+/]+=*$/.test(psbtHex) && !isHex; // Must be ONLY base64 chars
       
-      // �🔍 DIAGNOSTIC: Check PSBT structure to understand the error
-      console.log('🔍 PSBT Diagnostic:');
+      // � DIAGNOSTIC: Check PSBT structure to understand the error
+      console.log('PSBT Diagnostic:');
       console.log(`   PSBT format: ${isHex ? 'HEX' : isBase64 ? 'BASE64' : 'UNKNOWN'}`);
       console.log(`   Addresses in signInputs: ${Object.keys(signInputs).length}`);
       Object.keys(signInputs).forEach(addr => {
@@ -747,48 +747,48 @@ export class XverseProvider extends BaseWalletProvider {
         console.log(`   - ${addr.slice(0, 10)}...: ${isTaproot ? 'P2TR (Taproot)' : isNativeSegwit ? 'P2WPKH (Native SegWit)' : isWrappedSegwit ? 'P2SH-P2WPKH (Wrapped SegWit)' : 'Unknown'} - inputs: [${signInputs[addr].join(', ')}]`);
       });
       
-      // 🔍 Try to decode PSBT to see total inputs (diagnostic only)
+      //  Try to decode PSBT to see total inputs (diagnostic only)
       try {
         const psbtForDecode = normalizePsbtFormat(psbtHex, 'Xverse', 'output');
         // Simple check: PSBT magic bytes + version
         if (psbtForDecode.startsWith('70736274ff')) {
           // Count inputs by looking for input separators (rough estimate)
           const inputCount = (psbtForDecode.match(/0000000000/g) || []).length;
-          console.log(`   📋 PSBT appears to have ~${inputCount} input(s) total`);
-          console.log(`   📋 We're asking Xverse to sign ${Object.values(signInputs).flat().length} of them`);
+          console.log(`    PSBT appears to have ~${inputCount} input(s) total`);
+          console.log(`    We're asking Xverse to sign ${Object.values(signInputs).flat().length} of them`);
           
           const allInputIndexes = Object.values(signInputs).flat();
           if (inputCount > allInputIndexes.length) {
-            console.warn(`   ⚠️  PSBT has MORE inputs than we're signing!`);
-            console.warn(`   ⚠️  This might mean input ${inputCount - 1} is unsigned (e.g., inscription tapscript)`);
-            console.warn(`   ⚠️  Xverse might be confused by the unsigned Taproot input`);
+            console.warn(`     PSBT has MORE inputs than we're signing!`);
+            console.warn(`     This might mean input ${inputCount - 1} is unsigned (e.g., inscription tapscript)`);
+            console.warn(`     Xverse might be confused by the unsigned Taproot input`);
           }
         }
       } catch (e) {
-        console.log(`   ℹ️  Could not decode PSBT for diagnostic: ${e.message}`);
+        console.log(`     Could not decode PSBT for diagnostic: ${e.message}`);
       }
       
       let psbtBase64;
       if (isHex) {
         // Convert HEX to BASE64 for Xverse
-        console.log('📦 Converting PSBT from HEX to BASE64 for Xverse...');
+        console.log('Converting PSBT from HEX to BASE64 for Xverse...');
         psbtBase64 = normalizePsbtFormat(psbtHex, 'Xverse', 'input');
-        console.log('   Original HEX length:', psbtHex.length, 'chars');
-        console.log('   Converted BASE64 length:', psbtBase64.length, 'chars');
-        console.log('   First 50 chars of BASE64:', psbtBase64.substring(0, 50));
+        console.log('Original HEX length:', psbtHex.length, 'chars');
+        console.log('Converted BASE64 length:', psbtBase64.length, 'chars');
+        console.log('First 50 chars of BASE64:', psbtBase64.substring(0, 50));
       } else if (isBase64) {
-        console.log('✅ PSBT already in BASE64 format');
+        console.log('PSBT already in BASE64 format');
         psbtBase64 = psbtHex;
       } else {
         throw new Error('Invalid PSBT format: neither HEX nor BASE64');
       }
       
-      console.log('🔏 Xverse: Calling request("signPsbt") with Sats Connect format');
-      console.log('   signInputs:', JSON.stringify(signInputs, null, 2));
+      console.log('Xverse: Calling request("signPsbt") with Sats Connect format');
+      console.log('signInputs:', JSON.stringify(signInputs, null, 2));
       
       // Broadcasting via wallet APIs can be flaky for complex flows.
       // Default is no-broadcast; allow native broadcast when explicitly requested by the caller.
-      console.log('   broadcast:', shouldBroadcast);
+      console.log('broadcast:', shouldBroadcast);
       
       // Sats Connect format: psbt is BASE64 string, signInputs is object
       const requestParams = {
@@ -821,40 +821,40 @@ export class XverseProvider extends BaseWalletProvider {
       // • broadcast: false → { status: "success", result: { psbtBase64 } }
       // • JSON-RPC → { jsonrpc: "2.0", result: { psbt, txid }, id }
       // • Error → { jsonrpc: "2.0", error: { code, message }, id }
-      console.log('🔍 Xverse request("signPsbt") response:', response);
+      console.log('Xverse request("signPsbt") response:', response);
       
       // Check for JSON-RPC error first
       if (response && response.jsonrpc === '2.0' && response.error) {
         const errorCode = response.error.code;
         const errorMessage = response.error.message || 'PSBT signing failed';
-        console.error('❌ Xverse JSON-RPC error:', errorCode, errorMessage);
+        console.error('Xverse JSON-RPC error:', errorCode, errorMessage);
         
         // User rejection codes
         if (errorCode === 'USER_REJECTION' || errorCode === 4001) {
           throw new Error('User rejected the signing request');
         }
         
-        // 🔧 XVERSE LIMITATION: "No taproot scripts signed" error
+        //  XVERSE LIMITATION: "No taproot scripts signed" error
         // This occurs when the PSBT has multiple inputs and Xverse tries to sign Taproot inputs
         // but encounters inputs it cannot sign (e.g., tapscript paths)
         if (errorMessage.includes('No taproot scripts signed') || errorMessage.includes('taproot')) {
-          console.error('🚨 XVERSE LIMITATION DETECTED:');
-          console.error('   Error: "No taproot scripts signed"');
-          console.error('   ');
-          console.error('   This happens when:');
-          console.error('   1. PSBT has multiple inputs (e.g., parent + inscription)');
-          console.error('   2. Some inputs are Taproot tapscript (inscription input)');
-          console.error('   3. Xverse tries to sign ALL Taproot inputs, not just the ones specified');
-          console.error('   ');
-          console.error('   WORKAROUND OPTIONS:');
-          console.error('   A) Use Magic Eden or UniSat wallet (better Taproot support)');
-          console.error('   B) Use single-input inscriptions (no parent)');
-          console.error('   C) Wait for Xverse to fix multi-input Taproot PSBT handling');
-          console.error('   ');
-          console.error('   Technical: Reveal PSBT has 2 inputs:');
-          console.error('     - Input 0: Parent inscription (key-path, wallet signs)');
-          console.error('     - Input 1: Inscription output (tapscript, local signing)');
-          console.error('   Xverse sees input 1 and tries to sign it, but cannot.');
+          console.error('XVERSE LIMITATION DETECTED:');
+          console.error('Error: "No taproot scripts signed"');
+          console.error('');
+          console.error('This happens when:');
+          console.error('1. PSBT has multiple inputs (e.g., parent + inscription)');
+          console.error('2. Some inputs are Taproot tapscript (inscription input)');
+          console.error('3. Xverse tries to sign ALL Taproot inputs, not just the ones specified');
+          console.error('');
+          console.error('WORKAROUND OPTIONS:');
+          console.error('A) Use Magic Eden or UniSat wallet (better Taproot support)');
+          console.error('B) Use single-input inscriptions (no parent)');
+          console.error('C) Wait for Xverse to fix multi-input Taproot PSBT handling');
+          console.error('');
+          console.error('Technical: Reveal PSBT has 2 inputs:');
+          console.error('- Input 0: Parent inscription (key-path, wallet signs)');
+          console.error('- Input 1: Inscription output (tapscript, local signing)');
+          console.error('Xverse sees input 1 and tries to sign it, but cannot.');
           
           throw new Error(
             'Xverse cannot sign parent-child inscriptions. ' +
@@ -868,12 +868,12 @@ export class XverseProvider extends BaseWalletProvider {
         throw new Error(errorMessage);
       }
       
-      // 🚀 Check if wallet broadcasted automatically (only if txid WITHOUT psbt)
+      //  Check if wallet broadcasted automatically (only if txid WITHOUT psbt)
       // NOTE: Xverse v1.6.1 ignores broadcast flag and always returns PSBT
       // Future versions may return txid when auto-broadcast is implemented
       if (response && response.result && response.result.txid && !response.result.psbtBase64 && !response.result.psbt) {
-        console.log('✅ Xverse broadcast successful! Transaction ID:', response.result.txid);
-        console.log('   (No signed PSBT returned - wallet broadcasted directly)');
+        console.log('Xverse broadcast successful! Transaction ID:', response.result.txid);
+        console.log('(No signed PSBT returned - wallet broadcasted directly)');
         // Return special object indicating broadcast happened
         return {
           broadcasted: true,
@@ -889,11 +889,11 @@ export class XverseProvider extends BaseWalletProvider {
         if (!psbtBase64) {
           throw new Error('No signed PSBT in response result');
         }
-        console.log('✅ Xverse PSBT signed successfully via request("signPsbt")');
-        console.log('   ℹ️  Xverse v1.6.1 ignores broadcast flag - manual broadcast required');
-        // 🔧 Convert BASE64 → HEX for consistency with signing.js expectations
+        console.log('Xverse PSBT signed successfully via request("signPsbt")');
+        console.log('Xverse v1.6.1 ignores broadcast flag - manual broadcast required');
+        //  Convert BASE64 → HEX for consistency with signing.js expectations
         const psbtHex = normalizePsbtFormat(psbtBase64, 'Xverse', 'output');
-        console.log('🔧 Converted signed PSBT: BASE64 → HEX for downstream processing');
+        console.log('Converted signed PSBT: BASE64 → HEX for downstream processing');
         return psbtHex;
       } else if (response && response.status === 'error') {
         // Error response from sats-connect
@@ -906,7 +906,7 @@ export class XverseProvider extends BaseWalletProvider {
         // JSON-RPC success format
         // Check for broadcast response first (future-proofing)
         if (response.result.txid && !response.result.psbt && !response.result.psbtBase64) {
-          console.log('✅ Xverse broadcast successful! Transaction ID:', response.result.txid);
+          console.log('Xverse broadcast successful! Transaction ID:', response.result.txid);
           return {
             broadcasted: true,
             txid: response.result.txid,
@@ -919,24 +919,24 @@ export class XverseProvider extends BaseWalletProvider {
         if (!psbtBase64) {
           throw new Error('No signed PSBT in JSON-RPC result');
         }
-        console.log('✅ Xverse PSBT signed successfully (JSON-RPC format)');
-        console.log('   ℹ️  Xverse v1.6.1 ignores broadcast flag - manual broadcast required');
-        // 🔧 Convert BASE64 → HEX for consistency with signing.js expectations
+        console.log('Xverse PSBT signed successfully (JSON-RPC format)');
+        console.log('Xverse v1.6.1 ignores broadcast flag - manual broadcast required');
+        //  Convert BASE64 → HEX for consistency with signing.js expectations
         const psbtHex = normalizePsbtFormat(psbtBase64, 'Xverse', 'output');
-        console.log('🔧 Converted signed PSBT: BASE64 → HEX for downstream processing');
+        console.log('Converted signed PSBT: BASE64 → HEX for downstream processing');
         return psbtHex;
       } else if (response && response.psbtBase64) {
         // Fallback: direct response format (some wallet versions)
-        console.log('✅ Xverse PSBT signed successfully (direct format)');
-        // 🔧 Convert BASE64 → HEX for consistency with signing.js expectations
+        console.log('Xverse PSBT signed successfully (direct format)');
+        //  Convert BASE64 → HEX for consistency with signing.js expectations
         const psbtHex = normalizePsbtFormat(response.psbtBase64, 'Xverse', 'output');
-        console.log('🔧 Converted signed PSBT: BASE64 → HEX for downstream processing');
+        console.log('Converted signed PSBT: BASE64 → HEX for downstream processing');
         return psbtHex;
       }
 
       throw new Error('Invalid response format from Xverse wallet');
     } catch (error) {
-      console.error('❌ Xverse PSBT signing failed:', error);
+      console.error('Xverse PSBT signing failed:', error);
       const errorMessage = error?.message || 'Unknown Xverse signing error';
       throw new Error(`Xverse: ${errorMessage}`);
     }
@@ -949,16 +949,16 @@ export class XverseProvider extends BaseWalletProvider {
 
   /**
    * Broadcast a signed PSBT transaction
-   * 🔄 NOTE: Xverse automatic broadcast is attempted via signPsbt({ broadcast: true })
+   *  NOTE: Xverse automatic broadcast is attempted via signPsbt({ broadcast: true })
    * This method is a fallback for when automatic broadcast fails or is unsupported
    * @param {string} psbtHexOrBase64 - Signed PSBT in hex or base64 format
    * @param {Object} options - Broadcast options
    * @returns {Promise<string>} Transaction ID
    */
   async pushPsbt(psbtHexOrBase64, options = {}) {
-    console.warn('⚠️ Xverse: Manual broadcast required');
-    console.warn('   (Automatic broadcast via signPsbt should be attempted first)');
-    console.warn('   Throwing error to trigger manual broadcast UI...');
+    console.warn('Xverse: Manual broadcast required');
+    console.warn('(Automatic broadcast via signPsbt should be attempted first)');
+    console.warn('Throwing error to trigger manual broadcast UI...');
     
     // Throw error with specific Xverse flag to trigger user-friendly modal
     const error = new Error('Xverse requires manual broadcast');
@@ -969,15 +969,15 @@ export class XverseProvider extends BaseWalletProvider {
 
   /**
    * Broadcast a raw signed transaction
-   * 🔄 NOTE: Xverse automatic broadcast is attempted via signPsbt({ broadcast: true })
+   *  NOTE: Xverse automatic broadcast is attempted via signPsbt({ broadcast: true })
    * This method is a fallback for when automatic broadcast fails or is unsupported
    * @param {string} txHex - Raw transaction hex
    * @returns {Promise<string>} Transaction ID
    */
   async pushTx(txHex) {
-    console.warn('⚠️ Xverse: Manual broadcast required');
-    console.warn('   (Automatic broadcast via signPsbt should be attempted first)');
-    console.warn('   Throwing error to trigger manual broadcast UI...');
+    console.warn('Xverse: Manual broadcast required');
+    console.warn('(Automatic broadcast via signPsbt should be attempted first)');
+    console.warn('Throwing error to trigger manual broadcast UI...');
     
     // Throw error with specific Xverse flag to trigger user-friendly modal
     const error = new Error('Xverse requires manual broadcast');
@@ -1004,16 +1004,16 @@ export class XverseProvider extends BaseWalletProvider {
 
       // Handle sats-connect response format
       if (response.status === 'success') {
-        console.log('✅ Transaction sent:', response.result.txid);
+        console.log('Transaction sent:', response.result.txid);
         return response.result.txid;
       } else if (response.status === 'error') {
         throw new Error(response.error?.message || 'sendTransfer failed');
       }
 
-      console.log('✅ Transaction sent:', response.txid || response.result?.txid);
+      console.log('Transaction sent:', response.txid || response.result?.txid);
       return response.txid || response.result?.txid;
     } catch (error) {
-      console.error('❌ Failed to send Bitcoin:', error);
+      console.error('Failed to send Bitcoin:', error);
       throw error;
     }
   }
@@ -1046,7 +1046,7 @@ export class XverseProvider extends BaseWalletProvider {
         }
       };
     } catch (error) {
-      console.error('❌ Failed to get capabilities:', error);
+      console.error('Failed to get capabilities:', error);
       throw error;
     }
   }
@@ -1063,7 +1063,7 @@ export class XverseProvider extends BaseWalletProvider {
 
       return result;
     } catch (error) {
-      console.error('❌ Failed to sign message:', error);
+      console.error('Failed to sign message:', error);
       throw error;
     }
   }
@@ -1080,10 +1080,10 @@ export class XverseProvider extends BaseWalletProvider {
     try {
       const provider = this.getProvider();
       const result = await provider.signTransaction(psbtBase64, options);
-      console.log('✅ Transaction signed via Xverse signTransaction');
+      console.log('Transaction signed via Xverse signTransaction');
       return result;
     } catch (error) {
-      console.error('❌ Failed to sign transaction:', error);
+      console.error('Failed to sign transaction:', error);
       throw error;
     }
   }
@@ -1100,10 +1100,10 @@ export class XverseProvider extends BaseWalletProvider {
     try {
       const provider = this.getProvider();
       const results = await provider.signMultipleTransactions(psbtBase64s, options);
-      console.log(`✅ ${results.length} transactions signed via Xverse`);
+      console.log(` ${results.length} transactions signed via Xverse`);
       return results;
     } catch (error) {
-      console.error('❌ Failed to sign multiple transactions:', error);
+      console.error('Failed to sign multiple transactions:', error);
       throw error;
     }
   }
@@ -1125,10 +1125,10 @@ export class XverseProvider extends BaseWalletProvider {
         ...inscriptionData,
         ...options
       });
-      console.log('✅ Inscription created via Xverse:', result);
+      console.log('Inscription created via Xverse:', result);
       return result;
     } catch (error) {
-      console.error('❌ Failed to create inscription:', error);
+      console.error('Failed to create inscription:', error);
       throw error;
     }
   }
@@ -1148,7 +1148,7 @@ export class XverseProvider extends BaseWalletProvider {
         throw new Error('Xverse provider not found');
       }
 
-      console.log('🔍 Xverse: Creating repeat inscriptions with payload:', {
+      console.log('Xverse: Creating repeat inscriptions with payload:', {
         repeat: payload.repeat,
         contentType: payload.contentType,
         payloadType: payload.payloadType,
@@ -1157,12 +1157,12 @@ export class XverseProvider extends BaseWalletProvider {
 
       // Create JWT token using shared utility - same as inscribe
       const token = createUnsecuredToken(payload);
-      console.log('🔍 Xverse: Created JWT token for repeat inscriptions request');
+      console.log('Xverse: Created JWT token for repeat inscriptions request');
 
       // Call createRepeatInscriptions method with JWT token
       const response = await provider.createRepeatInscriptions(token);
       
-      console.log('✅ Xverse repeat inscriptions response:', response);
+      console.log('Xverse repeat inscriptions response:', response);
 
       // Handle response
       if (!response) {
@@ -1180,10 +1180,10 @@ export class XverseProvider extends BaseWalletProvider {
         count: payload.repeat
       };
 
-      console.log(`✅ ${payload.repeat} inscriptions created via Xverse:`, result);
+      console.log(` ${payload.repeat} inscriptions created via Xverse:`, result);
       return result;
     } catch (error) {
-      console.error('❌ Failed to create repeat inscriptions:', error);
+      console.error('Failed to create repeat inscriptions:', error);
       
       // Handle user cancellation
       if (error.code === 4001 || error.message?.includes('cancel')) {
@@ -1306,7 +1306,7 @@ export class XverseProvider extends BaseWalletProvider {
         inscriptionPayload.appFee = devFee;
       }
 
-      console.log('🔍 Xverse: Creating inscription with payload:', {
+      console.log('Xverse: Creating inscription with payload:', {
         contentType: inscriptionPayload.contentType,
         payloadType: inscriptionPayload.payloadType,
         contentLength: processedContent.length,
@@ -1316,12 +1316,12 @@ export class XverseProvider extends BaseWalletProvider {
 
       // Create JWT token using shared utility
       const token = createUnsecuredToken(inscriptionPayload);
-      console.log('🔍 Xverse: Created JWT token for inscription request');
+      console.log('Xverse: Created JWT token for inscription request');
 
       // Call createInscription method with JWT token
       const response = await provider.createInscription(token);
       
-      console.log('✅ Xverse inscription response:', response);
+      console.log('Xverse inscription response:', response);
 
       // Handle response
       if (!response) {
@@ -1338,11 +1338,11 @@ export class XverseProvider extends BaseWalletProvider {
         inscriptionId: response.inscriptionId || response.txId
       };
 
-      console.log('✅ Xverse inscription created:', result);
+      console.log('Xverse inscription created:', result);
       return result;
 
     } catch (error) {
-      console.error('❌ Xverse inscribe error:', error);
+      console.error('Xverse inscribe error:', error);
       
       // Handle user cancellation
       if (error.code === 4001 || error.message?.includes('cancel')) {
@@ -1364,10 +1364,10 @@ export class XverseProvider extends BaseWalletProvider {
     try {
       const provider = this.getProvider();
       
-      console.log('🔍 Xverse: Requesting runes_getBalance...');
+      console.log('Xverse: Requesting runes_getBalance...');
       const response = await _requestCompat(provider, 'runes_getBalance', undefined);
       
-      console.log('✅ Xverse runes balance:', response);
+      console.log('Xverse runes balance:', response);
       
       if (response && response.result) {
         return response.result;
@@ -1375,7 +1375,7 @@ export class XverseProvider extends BaseWalletProvider {
       
       return response;
     } catch (error) {
-      console.error('❌ Xverse getRunesBalance failed:', error);
+      console.error('Xverse getRunesBalance failed:', error);
       throw error;
     }
   }
@@ -1395,13 +1395,13 @@ export class XverseProvider extends BaseWalletProvider {
     try {
       const provider = this.getProvider();
       
-      console.log('🔍 Xverse: Transferring runes:', transferParams);
+      console.log('Xverse: Transferring runes:', transferParams);
       const response = await _requestCompat(provider, 'runes_transfer', transferParams);
       
-      console.log('✅ Xverse runes transfer:', response);
+      console.log('Xverse runes transfer:', response);
       return response;
     } catch (error) {
-      console.error('❌ Xverse transferRunes failed:', error);
+      console.error('Xverse transferRunes failed:', error);
       throw error;
     }
   }
@@ -1418,13 +1418,13 @@ export class XverseProvider extends BaseWalletProvider {
     try {
       const provider = this.getProvider();
       
-      console.log('🔍 Xverse: Minting runes:', mintParams);
+      console.log('Xverse: Minting runes:', mintParams);
       const response = await _requestCompat(provider, 'runes_mint', mintParams);
       
-      console.log('✅ Xverse runes mint:', response);
+      console.log('Xverse runes mint:', response);
       return response;
     } catch (error) {
-      console.error('❌ Xverse mintRunes failed:', error);
+      console.error('Xverse mintRunes failed:', error);
       throw error;
     }
   }
@@ -1441,13 +1441,13 @@ export class XverseProvider extends BaseWalletProvider {
     try {
       const provider = this.getProvider();
       
-      console.log('🔍 Xverse: Etching runes:', etchParams);
+      console.log('Xverse: Etching runes:', etchParams);
       const response = await _requestCompat(provider, 'runes_etch', etchParams);
       
-      console.log('✅ Xverse runes etch:', response);
+      console.log('Xverse runes etch:', response);
       return response;
     } catch (error) {
-      console.error('❌ Xverse etchRunes failed:', error);
+      console.error('Xverse etchRunes failed:', error);
       throw error;
     }
   }
@@ -1464,13 +1464,13 @@ export class XverseProvider extends BaseWalletProvider {
     try {
       const provider = this.getProvider();
       
-      console.log('🔍 Xverse: Getting runes order:', orderId);
+      console.log('Xverse: Getting runes order:', orderId);
       const response = await _requestCompat(provider, 'runes_getOrder', { orderId });
       
-      console.log('✅ Xverse runes order:', response);
+      console.log('Xverse runes order:', response);
       return response;
     } catch (error) {
-      console.error('❌ Xverse getRunesOrder failed:', error);
+      console.error('Xverse getRunesOrder failed:', error);
       throw error;
     }
   }
@@ -1489,13 +1489,13 @@ export class XverseProvider extends BaseWalletProvider {
     try {
       const provider = this.getProvider();
       
-      console.log('🔍 Xverse: Sending inscriptions:', sendParams);
+      console.log('Xverse: Sending inscriptions:', sendParams);
       const response = await _requestCompat(provider, 'ord_sendInscriptions', sendParams);
       
-      console.log('✅ Xverse inscriptions sent:', response);
+      console.log('Xverse inscriptions sent:', response);
       return response;
     } catch (error) {
-      console.error('❌ Xverse sendInscriptions failed:', error);
+      console.error('Xverse sendInscriptions failed:', error);
       throw error;
     }
   }

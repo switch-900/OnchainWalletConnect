@@ -67,7 +67,7 @@ export class OylProvider extends BaseWalletProvider {
     this.requireInstalled();
 
     try {
-      debugLog('🔍 Connecting to Oyl wallet...');
+      debugLog('Connecting to Oyl wallet...');
       const provider = this.walletInstance;
       
       // Oyl wallet uses getAddresses() which returns a structured object.
@@ -76,7 +76,7 @@ export class OylProvider extends BaseWalletProvider {
       // and sometimes key-casing variants like nativeSegWit / nestedSegWit.
       const accounts = await provider.getAddresses();
 
-      debugLog('🔍 Oyl addresses received');
+      debugLog('Oyl addresses received');
       
       if (!accounts) {
         throw new Error('No response from Oyl wallet');
@@ -115,7 +115,7 @@ export class OylProvider extends BaseWalletProvider {
       } else {
         // If payment isn't available, fall back to primary address.
         // This keeps single-account wallets functional, but may yield 0 UTXOs if user funds are on a different script type.
-        debugWarn('⚠️ Oyl did not return a payment account (native segwit/nested/legacy). Using primary address for payment operations.');
+        debugWarn('Oyl did not return a payment account (native segwit/nested/legacy). Using primary address for payment operations.');
       }
       
       if (!this.address) {
@@ -124,7 +124,7 @@ export class OylProvider extends BaseWalletProvider {
       
       this.isConnected = true;
 
-      debugLog('✅ Oyl connected');
+      debugLog('Oyl connected');
       
       return { 
         address: this.address,
@@ -135,7 +135,7 @@ export class OylProvider extends BaseWalletProvider {
         paymentPublicKey: this.paymentPublicKey
       };
     } catch (error) {
-      debugWarn('❌ Oyl connection failed');
+      debugWarn('Oyl connection failed');
       throw error;
     }
   }
@@ -151,7 +151,7 @@ export class OylProvider extends BaseWalletProvider {
     this.publicKey = null;
     this.ordinalsPublicKey = null;
     this.paymentPublicKey = null;
-    debugLog('✅ Oyl disconnected');
+    debugLog('Oyl disconnected');
   }
 
   async isConnectedCheck() {
@@ -181,7 +181,7 @@ export class OylProvider extends BaseWalletProvider {
       // Fallback to stored address
       return this.address;
     } catch (error) {
-      debugWarn('❌ Failed to get address');
+      debugWarn('Oyl: failed to get address');
       return this.address;
     }
   }
@@ -199,7 +199,7 @@ export class OylProvider extends BaseWalletProvider {
       }
       return [...new Set(out)];
     } catch (error) {
-      debugWarn('❌ Failed to get accounts');
+      debugWarn('Oyl: failed to get accounts');
       throw error;
     }
   }
@@ -230,7 +230,7 @@ export class OylProvider extends BaseWalletProvider {
       }
       return 'livenet';
     } catch (error) {
-      debugWarn('❌ Failed to get network');
+      debugWarn('Oyl: failed to get network');
       return 'livenet';
     }
   }
@@ -238,7 +238,7 @@ export class OylProvider extends BaseWalletProvider {
   async switchNetwork(network) {
     this.requireInstalled();
     await this.walletInstance.switchNetwork(network);
-    debugLog('✅ Oyl network switched');
+    debugLog('Oyl network switched');
   }
 
   // ========================================
@@ -248,7 +248,7 @@ export class OylProvider extends BaseWalletProvider {
   async signMessage(message, options = {}) {
     this.requireConnected();
     
-    // 🔥 CRITICAL: OYL signMessage expects an object: { address, message, protocol? }
+    //  Important: OYL signMessage expects an object: { address, message, protocol? }
     const address = options.toSignAddress || this.paymentAddress || this.address;
     
     const response = await this.walletInstance.signMessage({
@@ -264,7 +264,7 @@ export class OylProvider extends BaseWalletProvider {
   async signPsbt(psbtHex, options = {}) {
     this.requireConnected();
 
-    debugLog('🔍 OYL signPsbt called');
+    debugLog('OYL signPsbt called');
 
     try {
       // OYL API error message indicates it expects PSBT HEX for signing.
@@ -274,40 +274,40 @@ export class OylProvider extends BaseWalletProvider {
       
       // Handle Uint8Array input
       if (psbtHex instanceof Uint8Array) {
-        debugLog('🔄 Converting PSBT from Uint8Array to HEX for OYL...');
+        debugLog('Converting PSBT from Uint8Array to HEX for OYL...');
         psbtHexNormalized = Array.from(psbtHex, byte => byte.toString(16).padStart(2, '0')).join('');
-        debugLog('✅ Converted Uint8Array to hex');
+        debugLog('Converted Uint8Array to hex');
       }
       // Handle base64 string
       else if (typeof psbtHex === 'string' && psbtHex.startsWith('cHNidP')) {
-        debugLog('🔄 Converting PSBT from BASE64 to HEX for OYL...');
+        debugLog('Converting PSBT from BASE64 to HEX for OYL...');
         if (typeof Buffer !== 'undefined') {
           psbtHexNormalized = Buffer.from(psbtHex, 'base64').toString('hex');
         } else {
           const binary = atob(psbtHex);
           psbtHexNormalized = Array.from(binary, ch => ch.charCodeAt(0).toString(16).padStart(2, '0')).join('');
         }
-        debugLog('✅ Converted base64 to hex');
+        debugLog('Converted base64 to hex');
       }
       // Validate it's actually hex
       else if (typeof psbtHex === 'string') {
         const cleaned = psbtHex.toLowerCase().trim();
         if (!/^[0-9a-f]+$/.test(cleaned)) {
-          debugWarn('❌ Invalid PSBT format - not hex, base64, or Uint8Array');
+          debugWarn('Invalid PSBT format - not hex, base64, or Uint8Array');
           throw new Error('Invalid PSBT format provided to OYL wallet');
         }
         psbtHexNormalized = cleaned;
-        debugLog('✅ Using provided hex');
+        debugLog('Using provided hex');
       }
       
       // Verify PSBT magic bytes (70736274 = "psbt" in hex)
       if (!psbtHexNormalized.toLowerCase().startsWith('70736274')) {
-        debugWarn('❌ PSBT does not start with magic bytes (70736274)');
+        debugWarn('PSBT does not start with magic bytes (70736274)');
         throw new Error('Invalid PSBT: missing magic bytes');
       }
 
-      debugLog('🔏 Calling OYL wallet.signPsbt...');
-      debugLog('   PSBT hex length:', psbtHexNormalized.length, 'chars');
+      debugLog('Calling OYL wallet.signPsbt...');
+      debugLog('PSBT hex length:', psbtHexNormalized.length, 'chars');
       
       let result;
       
@@ -319,15 +319,15 @@ export class OylProvider extends BaseWalletProvider {
           broadcast: options.broadcast ?? false
         };
         
-        debugLog('🔄 OYL calling: signPsbt({ psbt, finalize, broadcast })');
+        debugLog('OYL calling: signPsbt({ psbt, finalize, broadcast })');
         
         // OYL returns { psbt: string, txid?: string }
         result = await this.walletInstance.signPsbt(oylOptions);
 
-        debugLog('✅ OYL signed PSBT successfully');
+        debugLog('OYL signed PSBT successfully');
         
       } catch (error) {
-        debugWarn('❌ OYL signPsbt failed:', error?.message);
+        debugWarn('OYL signPsbt failed:', error?.message);
 
         throw new Error(
           `OYL wallet failed to sign PSBT: ${error?.message}. ` +
@@ -343,11 +343,11 @@ export class OylProvider extends BaseWalletProvider {
         throw new Error('OYL returned invalid response - no psbt property found');
       }
       
-      debugLog('✅ OYL signed PSBT');
+      debugLog('OYL signed PSBT');
       
       // Normalize output to HEX if it came back as base64
       if (typeof signedPsbtHex === 'string' && signedPsbtHex.startsWith('cHNidP')) {
-        debugLog('🔄 Converting signed PSBT from BASE64 back to HEX...');
+        debugLog('Converting signed PSBT from BASE64 back to HEX...');
         if (typeof Buffer !== 'undefined') {
           return Buffer.from(signedPsbtHex, 'base64').toString('hex');
         }
@@ -357,7 +357,7 @@ export class OylProvider extends BaseWalletProvider {
       
       return signedPsbtHex;
     } catch (error) {
-      debugWarn('❌ OYL signPsbt failed:', error?.message);
+      debugWarn('OYL signPsbt failed:', error?.message);
       throw error;
     }
   }
@@ -365,7 +365,7 @@ export class OylProvider extends BaseWalletProvider {
   async signPsbts(psbtHexs, options = {}) {
     this.requireConnected();
 
-    debugLog('🔍 OYL signPsbts called with:', psbtHexs?.length, 'PSBTs');
+    debugLog('OYL signPsbts called with:', psbtHexs?.length, 'PSBTs');
     
     // Normalize all inputs to HEX
     const toHex = (psbt) => {
@@ -387,12 +387,12 @@ export class OylProvider extends BaseWalletProvider {
       broadcast: options.broadcast ?? false
     }));
     
-    debugLog('🔄 OYL calling: signPsbts([{ psbt, finalize, broadcast }, ...])');
+    debugLog('OYL calling: signPsbts([{ psbt, finalize, broadcast }, ...])');
     
     // OYL returns [{ psbt: string, txid?: string }, ...]
     const results = await this.walletInstance.signPsbts(psbtsToSign);
     
-    debugLog('✅ OYL signed', results?.length, 'PSBTs');
+    debugLog('OYL signed', results?.length, 'PSBTs');
     
     // Extract psbt strings from result objects and normalize to HEX
     if (Array.isArray(results)) {
@@ -418,7 +418,7 @@ export class OylProvider extends BaseWalletProvider {
     
     // OYL returns { txid: string }
     const txid = response?.txid || response;
-    debugLog('✅ Oyl PSBT pushed');
+    debugLog('Oyl PSBT pushed');
     return txid;
   }
 
@@ -432,7 +432,7 @@ export class OylProvider extends BaseWalletProvider {
 
     // Check if Oyl actually supports this
     if (typeof this.walletInstance.sendBitcoin !== 'function') {
-      debugWarn('⚠️ Oyl wallet may not support sendBitcoin directly');
+      debugWarn('Oyl wallet may not support sendBitcoin directly');
       throw new Error(
         'Oyl wallet does not support sendBitcoin() method.\n' +
         'Use sendToRelayProvider() or external transaction building.'
@@ -441,10 +441,10 @@ export class OylProvider extends BaseWalletProvider {
     
     try {
       const txid = await this.walletInstance.sendBitcoin(toAddress, amount);
-      debugLog('✅ Oyl transaction sent');
+      debugLog('Oyl transaction sent');
       return txid;
     } catch (error) {
-      debugWarn('❌ Failed to send Bitcoin');
+      debugWarn('Oyl: failed to send Bitcoin');
       throw error;
     }
   }
@@ -459,7 +459,7 @@ export class OylProvider extends BaseWalletProvider {
     try {
       // Check if Oyl supports getInscriptions
       if (typeof this.walletInstance.getInscriptions !== 'function') {
-        debugWarn('⚠️ Oyl wallet does not support inscription fetching');
+        debugWarn('Oyl wallet does not support inscription fetching');
         return { list: [], total: 0 };
       }
       
@@ -473,7 +473,7 @@ export class OylProvider extends BaseWalletProvider {
         total: inscriptions.length
       };
     } catch (error) {
-      debugWarn('❌ Failed to fetch Oyl inscriptions');
+      debugWarn('Failed to fetch Oyl inscriptions');
       return { list: [], total: 0 };
     }
   }

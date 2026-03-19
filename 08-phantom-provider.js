@@ -59,10 +59,10 @@ export class PhantomProvider extends BaseWalletProvider {
         throw new Error('No accounts returned from Phantom wallet');
       }
 
-      debugLog('🔍 Phantom accounts received');
-      debugLog('🔍 Number of accounts:', accounts.length);
+      debugLog('Phantom accounts received');
+      debugLog('Number of accounts:', accounts.length);
       
-      // 🔥 CRITICAL: Phantom has TWO modes:
+      //  Important: Phantom has TWO modes:
       // 1. Native Phantom wallet: returns accounts with 'purpose' field (ordinals/payment)
       // 2. Imported address: returns single account without 'purpose' field
       
@@ -71,14 +71,14 @@ export class PhantomProvider extends BaseWalletProvider {
       
       if (hasOrdinalsAccount && hasPaymentAccount) {
         // Mode 1: Dual address wallet (native Phantom)
-        debugLog('✅ Phantom dual address mode detected');
+        debugLog('Phantom dual address mode detected');
         this.address = hasOrdinalsAccount.address;
         this.publicKey = hasOrdinalsAccount.publicKey;
         this.paymentAddress = hasPaymentAccount.address;
         this.paymentPublicKey = hasPaymentAccount.publicKey;
       } else {
         // Mode 2: Single address wallet (imported or legacy)
-        debugLog('✅ Phantom single address mode detected (imported wallet or legacy)');
+        debugLog('Phantom single address mode detected (imported wallet or legacy)');
         const account = accounts[0];
         
         // Use the same address for both ordinals and payment
@@ -88,17 +88,17 @@ export class PhantomProvider extends BaseWalletProvider {
         this.paymentAddress = account.address;  // Same address
         this.paymentPublicKey = account.publicKey;
         
-        debugWarn('⚠️ Using same address for ordinals and payment');
-        debugWarn('⚠️ For better security, consider creating a native Phantom wallet');
+        debugWarn('Using same address for ordinals and payment');
+        debugWarn('For better security, consider creating a native Phantom wallet');
       }
       
       this.isConnected = true;
       
-      debugLog('✅ Phantom connected');
+      debugLog('Phantom connected');
       
       return { 
         address: this.address,
-        // 🔥 CRITICAL: For single-address wallets, DON'T set ordinalsAddress
+        //  Important: For single-address wallets, DON'T set ordinalsAddress
         // This tells the system it's a single-address wallet (like Unisat)
         ordinalsAddress: this.address === this.paymentAddress ? null : this.address,
         paymentAddress: this.paymentAddress,
@@ -106,7 +106,7 @@ export class PhantomProvider extends BaseWalletProvider {
         paymentPublicKey: this.paymentPublicKey
       };
     } catch (error) {
-      debugWarn('❌ Phantom connection failed');
+      debugWarn('Phantom connection failed');
       throw error;
     }
   }
@@ -118,7 +118,7 @@ export class PhantomProvider extends BaseWalletProvider {
       const accounts = await this.walletInstance.getAccounts();
       return accounts[0].address;
     } catch (error) {
-      debugWarn('❌ Failed to get address');
+      debugWarn('Phantom: failed to get address');
       return this.address;
     }
   }
@@ -135,7 +135,7 @@ export class PhantomProvider extends BaseWalletProvider {
       // Phantom Bitcoin API doesn't have getAccounts, but we can return the current address
       return [this.address];
     } catch (error) {
-      debugWarn('❌ Failed to get accounts');
+      debugWarn('Phantom: failed to get accounts');
       throw error;
     }
   }
@@ -152,7 +152,7 @@ export class PhantomProvider extends BaseWalletProvider {
       // Handle both formats: string or {signature: string}
       return typeof signature === 'string' ? signature : signature.signature;
     } catch (error) {
-      debugWarn('❌ Failed to sign message');
+      debugWarn('Phantom: failed to sign message');
       throw error;
     }
   }
@@ -161,7 +161,7 @@ export class PhantomProvider extends BaseWalletProvider {
     this.requireConnected();
 
     try {
-      debugLog('🔍 Phantom signPsbt called');
+      debugLog('Phantom signPsbt called');
 
       const hasBuffer = () => (typeof Buffer !== 'undefined' && Buffer && typeof Buffer.from === 'function');
 
@@ -218,7 +218,7 @@ export class PhantomProvider extends BaseWalletProvider {
         return out;
       };
 
-      // 🔥 CRITICAL FIX: Phantom expects PSBT in BASE64 format, not hex!
+      //  Important behavior note: Phantom expects PSBT in BASE64 format, not hex!
       // The error "A psbt hex is required" is misleading - it actually wants base64
       // See: https://docs.phantom.app/bitcoin/signing-transactions
       
@@ -233,19 +233,19 @@ export class PhantomProvider extends BaseWalletProvider {
           // Hex string -> bytes/base64
           psbtBytes = hexToBytes(psbtHex);
           psbtBase64 = bytesToBase64(psbtBytes);
-          debugLog('🧪 Phantom PSBT prepared from HEX');
+          debugLog('Phantom PSBT prepared from HEX');
         } else if (typeof psbtHex === 'string' && psbtHex.startsWith('cHNidP')) {
           // Base64 -> bytes
           psbtBytes = base64ToBytes(psbtHex);
           psbtBase64 = psbtHex;
-          debugLog('🧪 Phantom PSBT prepared from BASE64');
+          debugLog('Phantom PSBT prepared from BASE64');
         } else if (psbtHex instanceof Uint8Array) {
           psbtBytes = psbtHex;
           psbtBase64 = bytesToBase64(psbtHex);
-          debugLog('🧪 Phantom PSBT provided as Uint8Array');
+          debugLog('Phantom PSBT provided as Uint8Array');
         }
       } catch (convErr) {
-        debugWarn('⚠️ PSBT conversion warning:', convErr?.message);
+        debugWarn('PSBT conversion warning:', convErr?.message);
       }
       
       // Normalize cross-wallet options → Phantom shape using shared normalizer.
@@ -256,7 +256,7 @@ export class PhantomProvider extends BaseWalletProvider {
         'Phantom'
       );
 
-      debugLog('🔍 Phantom normalized options prepared');
+      debugLog('Phantom normalized options prepared');
 
       // Phantom has multiple invocation styles across versions:
       // 1) signPSBT(psbtBase64) - simplest, no options
@@ -264,7 +264,7 @@ export class PhantomProvider extends BaseWalletProvider {
       // 3) request({ method: 'signPSBT', params: [...] })
       let signedPsbt;
       const tryUpper = async (opts = null) => {
-        debugLog('🔏 Using signPSBT (uppercase)' + (opts ? ' with options...' : '...'));
+        debugLog('Using signPSBT (uppercase)' + (opts ? ' with options...' : '...'));
         const arg = psbtBytes || psbtBase64 || psbtOriginal;
         if (opts) {
           return await this.walletInstance.signPSBT(arg, opts);
@@ -273,7 +273,7 @@ export class PhantomProvider extends BaseWalletProvider {
         }
       };
       const tryLower = async (opts = null) => {
-        debugLog('🔏 Using signPsbt (lowercase)' + (opts ? ' with options...' : '...'));
+        debugLog('Using signPsbt (lowercase)' + (opts ? ' with options...' : '...'));
         const arg = psbtBytes || psbtBase64 || psbtOriginal;
         if (opts) {
           return await this.walletInstance.signPsbt(arg, opts);
@@ -283,10 +283,10 @@ export class PhantomProvider extends BaseWalletProvider {
       };
       const tryRequest = async () => {
         if (typeof this.walletInstance.request !== 'function') {
-          debugWarn('⚠️ request() not available on Phantom provider');
+          debugWarn('request() not available on Phantom provider');
           throw new Error('Phantom Bitcoin API does not support request() method. Please ensure Phantom wallet is updated.');
         }
-        debugLog('🔏 Using request("signPSBT") EIP-1193 style...');
+        debugLog('Using request("signPSBT") EIP-1193 style...');
         // Try params as object first
         try {
           const res = await this.walletInstance.request({
@@ -295,7 +295,7 @@ export class PhantomProvider extends BaseWalletProvider {
           });
           return res;
         } catch (eObj) {
-          debugWarn('⚠️ request({params: object}) failed, trying array params');
+          debugWarn('request({params: object}) failed, trying array params');
           // Then try array params shape
           const res2 = await this.walletInstance.request({
             method: 'signPSBT',
@@ -310,19 +310,19 @@ export class PhantomProvider extends BaseWalletProvider {
           // Try with NO options first (Phantom is picky about parameters)
           signedPsbt = await tryUpper(null);
         } catch (e1) {
-          debugWarn('⚠️ signPSBT (no options) threw:', e1?.message);
+          debugWarn('signPSBT (no options) threw:', e1?.message);
           
           // Try with normalized options
           try {
-            debugWarn('⚠️ Retrying signPSBT with normalized options...');
+            debugWarn('Retrying signPSBT with normalized options...');
             signedPsbt = await tryUpper(normalizedOptions);
           } catch (e2) {
-            debugWarn('⚠️ signPSBT with options failed, trying with empty object');
+            debugWarn('signPSBT with options failed, trying with empty object');
             try {
               // Try with empty options object
               signedPsbt = await tryUpper({});
             } catch (e3) {
-              debugWarn('⚠️ All signPSBT attempts failed, trying lowercase method');
+              debugWarn('All signPSBT attempts failed, trying lowercase method');
               if (typeof this.walletInstance.signPsbt === 'function') {
                 try {
                   signedPsbt = await tryLower(null);
@@ -330,21 +330,21 @@ export class PhantomProvider extends BaseWalletProvider {
                   try {
                     signedPsbt = await tryLower(normalizedOptions);
                   } catch (e5) {
-                    debugWarn('⚠️ No lowercase signPsbt available, trying request API...');
+                    debugWarn('No lowercase signPsbt available, trying request API...');
                     try {
                       signedPsbt = await tryRequest();
                     } catch (e6) {
-                      debugWarn('❌ All Phantom signing methods exhausted');
+                      debugWarn('All Phantom signing methods exhausted');
                       throw new Error(`Phantom signing failed: ${e1.message}. Tried signPSBT and signPsbt methods.`);
                     }
                   }
                 }
               } else {
-                debugWarn('⚠️ No lowercase signPsbt available, trying request API...');
+                debugWarn('No lowercase signPsbt available, trying request API...');
                 try {
                   signedPsbt = await tryRequest();
                 } catch (e4) {
-                  debugWarn('❌ All Phantom signing methods exhausted');
+                  debugWarn('All Phantom signing methods exhausted');
                   throw new Error(`Phantom signing failed: ${e1.message}. Tried signPSBT, signPsbt, and request() methods.`);
                 }
               }
@@ -370,16 +370,16 @@ export class PhantomProvider extends BaseWalletProvider {
         }
       }
 
-      debugLog('✅ Phantom signed PSBT');
+      debugLog('Phantom signed PSBT');
       
-      // 🔥 CRITICAL: Phantom returns Uint8Array, not string!
+      //  Important: Phantom returns Uint8Array, not string!
           let resultHex;
       
       if (signedPsbt instanceof Uint8Array) {
         // Convert Uint8Array to hex
-        debugLog('🔄 Converting Uint8Array to HEX...');
+        debugLog('Converting Uint8Array to HEX...');
         resultHex = bytesToHex(signedPsbt);
-        debugLog('✅ Converted to hex');
+        debugLog('Converted to hex');
       } else if (typeof Buffer !== 'undefined' && Buffer.isBuffer(signedPsbt)) {
         // Convert Buffer to hex
         debugLog('Converting Buffer to HEX...');
@@ -388,7 +388,7 @@ export class PhantomProvider extends BaseWalletProvider {
         // Already a string - check if base64 or hex
         if (signedPsbt.startsWith('cHNidP')) {
           // Base64 -> hex
-          debugLog('🔄 Converting BASE64 to HEX...');
+          debugLog('Converting BASE64 to HEX...');
           resultHex = bytesToHex(base64ToBytes(signedPsbt));
         } else {
           // Already hex
@@ -404,14 +404,14 @@ export class PhantomProvider extends BaseWalletProvider {
         // Object with psbt property
         resultHex = signedPsbt.psbt;
       } else {
-        debugWarn('❌ Unknown signed PSBT format');
+        debugWarn('Unknown signed PSBT format');
         throw new Error('Phantom returned unexpected PSBT format');
       }
 
-      debugLog('✅ Final PSBT hex prepared');
+      debugLog('Final PSBT hex prepared');
       return resultHex;
     } catch (error) {
-      debugWarn('❌ Failed to sign PSBT:', error?.message);
+      debugWarn('Phantom: signPsbt failed:', error?.message);
       throw error;
     }
   }
@@ -426,14 +426,14 @@ export class PhantomProvider extends BaseWalletProvider {
     try {
       // Phantom Bitcoin API doesn't have direct getBalance
       // We need to work with what's available or return a placeholder
-      debugWarn('⚠️ Phantom Bitcoin API has limited balance support');
+      debugWarn('Phantom Bitcoin API has limited balance support');
       return {
         confirmed: 0,
         unconfirmed: 0, 
         total: 0
       };
     } catch (error) {
-      debugWarn('❌ Failed to get balance');
+      debugWarn('Phantom: failed to get balance');
       throw error;
     }
   }
@@ -445,7 +445,7 @@ export class PhantomProvider extends BaseWalletProvider {
       const network = await this.walletInstance.getNetwork();
       return normalizeNetwork(network);
     } catch (error) {
-      debugWarn('❌ Failed to get network');
+      debugWarn('Phantom: failed to get network');
       return 'livenet';
     }
   }
@@ -465,10 +465,10 @@ export class PhantomProvider extends BaseWalletProvider {
         ...options
       });
 
-      debugLog('✅ Phantom transaction sent');
+      debugLog('Phantom transaction sent');
       return response;
     } catch (error) {
-      debugWarn('❌ Failed to send Bitcoin');
+      debugWarn('Phantom: failed to send Bitcoin');
       throw error;
     }
   }
@@ -484,7 +484,7 @@ export class PhantomProvider extends BaseWalletProvider {
 
     // Listen for account changes
     this.walletInstance.on('accountsChanged', (accounts) => {
-      debugLog('👤 Phantom accounts changed');
+      debugLog('Phantom accounts changed');
       if (accounts && accounts.length > 0) {
         this.address = accounts[0].address;
         this.publicKey = accounts[0].publicKey;
@@ -495,7 +495,7 @@ export class PhantomProvider extends BaseWalletProvider {
       }
     });
 
-    debugLog('✅ Phantom event listeners set up');
+    debugLog('Phantom event listeners set up');
   }
 
   removeEventListeners() {
@@ -507,7 +507,7 @@ export class PhantomProvider extends BaseWalletProvider {
     if (typeof this.walletInstance.removeAllListeners === 'function') {
       this.walletInstance.removeAllListeners('accountsChanged');
     }
-    debugLog('✅ Phantom event listeners removed');
+    debugLog('Phantom event listeners removed');
   }
 }
 

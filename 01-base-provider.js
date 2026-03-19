@@ -2,6 +2,16 @@
  * BaseWalletProvider - Foundation Module
  */
 
+const __nexusWalletDebugEnabled = () =>
+  typeof window !== 'undefined' && window.NEXUS_WALLET_DEBUG === true;
+
+const debugWarn = (...args) => {
+  if (__nexusWalletDebugEnabled()) {
+    // eslint-disable-next-line no-console
+    console.warn(...args);
+  }
+};
+
 export class BaseWalletProvider {
   constructor(name) {
     this.name = name;
@@ -501,7 +511,7 @@ export class BaseWalletProvider {
     }
     
     if (pageCount >= maxPages) {
-      console.warn(`⚠️ ${this.name}: Reached pagination safety limit (${maxPages * pageSize} inscriptions)`);
+      debugWarn(`${this.name}: Reached pagination safety limit (${maxPages * pageSize} inscriptions)`);
     }
     
     return allInscriptions;

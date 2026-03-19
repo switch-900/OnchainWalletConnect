@@ -83,13 +83,13 @@ export class MagicEdenProvider extends BaseWalletProvider {
 
     const provider = this.walletInstance;
 
-    // CRITICAL: Detect multi-wallet conflicts early
+    // Important: Detect multi-wallet conflicts early
     const hasXverse = typeof window.XverseProviders !== 'undefined' || typeof window.BitcoinProvider?.request === 'function';
     const hasLeather = typeof window.LeatherProvider !== 'undefined';
     
     if ((hasXverse || hasLeather) && !provider?.isMagicEden) {
       throw new Error(
-        '🚨 WALLET CONFLICT DETECTED\n\n' +
+        ' Wallet conflict detected\n\n' +
         'Magic Eden cannot coexist with other Bitcoin wallets.\n' +
         `Detected: ${hasXverse ? 'Xverse ' : ''}${hasLeather ? 'Leather' : ''}\n\n` +
         'SOLUTIONS:\n' +
@@ -102,7 +102,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
 
     if (!provider || !provider.isMagicEden) {
       throw new Error(
-        '⚠️ Magic Eden wallet is installed but cannot be accessed.\n\n' +
+        ' Magic Eden wallet is installed but cannot be accessed.\n\n' +
         'This happens when multiple Bitcoin wallets are installed.\n\n' +
         'SOLUTION:\n' +
         '1. Disable Xverse and Leather extensions\n' +
@@ -144,7 +144,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
       this.publicKey = paymentAddress?.publicKey || ordinalsAddress?.publicKey;
       this.isConnected = true;
 
-      debugLog('✅ Magic Eden connected');
+      debugLog('Magic Eden connected');
 
       return {
         address: this.address,
@@ -153,7 +153,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
         publicKey: this.publicKey
       };
     } catch (error) {
-      debugWarn('❌ Magic Eden connection failed');
+      debugWarn('Magic Eden connection failed');
       throw error;
     }
   }
@@ -204,7 +204,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
     this.requireConnected();
 
     // Magic Eden wallet does not support getBalance via their API
-    debugLog('ℹ️ Magic Eden does not support getBalance - use their web interface');
+    debugLog('Magic Eden does not support getBalance - use their web interface');
     return { confirmed: 0, unconfirmed: 0, total: 0 };
   }
 
@@ -232,10 +232,10 @@ export class MagicEdenProvider extends BaseWalletProvider {
       // Call Magic Eden's direct signMessage() method
       const signature = await this.walletInstance.signMessage(request);
 
-      debugLog('✅ Magic Eden message signed');
+      debugLog('Magic Eden message signed');
       return signature;
     } catch (error) {
-      debugWarn('❌ Magic Eden sign message failed');
+      debugWarn('Magic Eden sign message failed');
       throw new Error(`Message signing failed: ${error.message}`);
     }
   }
@@ -292,13 +292,13 @@ export class MagicEdenProvider extends BaseWalletProvider {
       const hexToBase64 = (hex) => bytesToBase64(hexToBytes(hex));
       const base64ToHex = (b64) => bytesToHex(base64ToBytes(b64));
 
-      // 🔧 FIX: Magic Eden REQUIRES base64, but we might receive hex
+      //  FIX: Magic Eden REQUIRES base64, but we might receive hex
       // Convert hex to base64 if needed
       let psbtBase64 = psbtInput;
       
       // Detect if input is hex (all hex chars, even length)
       if (isHexString(psbtInput)) {
-        debugLog('🔧 Magic Eden: Converting PSBT from hex to base64...');
+        debugLog('Magic Eden: Converting PSBT from hex to base64...');
         psbtBase64 = hexToBase64(psbtInput);
       }
       
@@ -329,8 +329,8 @@ export class MagicEdenProvider extends BaseWalletProvider {
         }));
       })();
       
-      debugLog('🔏 Magic Eden: Signing PSBT...');
-      debugLog('  inputsToSign groups:', inputsToSign.length);
+      debugLog('Magic Eden: Signing PSBT...');
+      debugLog('inputsToSign groups:', inputsToSign.length);
       
       // Create JWT token for sign transaction request
       const payload = {
@@ -346,7 +346,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
       // Call Magic Eden's direct signTransaction() method
       const result = await this.walletInstance.signTransaction(request);
 
-      debugLog('✅ Magic Eden PSBT signed');
+      debugLog('Magic Eden PSBT signed');
       
       // Return the signed PSBT in the SAME format as input
       if (result?.psbtBase64) {
@@ -359,7 +359,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
       
       throw new Error('No signed PSBT returned from Magic Eden');
     } catch (error) {
-      debugWarn('❌ Magic Eden sign PSBT failed');
+      debugWarn('Magic Eden sign PSBT failed');
       
       // Better error messages
       if (error.message?.includes('Magic Number')) {
@@ -374,7 +374,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
     this.requireConnected();
 
     try {
-      debugLog(`🔏 Magic Eden: Signing ${psbtInputs.length} PSBTs...`);
+      debugLog(`Magic Eden: Signing ${psbtInputs.length} PSBTs...`);
       
       // Sign each PSBT sequentially (Magic Eden doesn't have batch signing)
       const results = [];
@@ -387,10 +387,10 @@ export class MagicEdenProvider extends BaseWalletProvider {
         results.push(signedPsbt);
       }
       
-      debugLog(`✅ Magic Eden: All ${results.length} PSBTs signed`);
+      debugLog(`Magic Eden: All ${results.length} PSBTs signed`);
       return results;
     } catch (error) {
-      debugWarn('❌ Magic Eden sign PSBTs failed');
+      debugWarn('Magic Eden sign PSBTs failed');
       throw new Error(`Batch PSBT signing failed: ${error.message}`);
     }
   }
@@ -399,7 +399,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
     this.requireConnected();
 
     const result = await this.walletInstance.signTransaction(psbtBase64);
-    debugLog('✅ Transaction signed via Magic Eden');
+    debugLog('Transaction signed via Magic Eden');
     return result;
   }
 
@@ -407,7 +407,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
     this.requireConnected();
 
     const results = await this.walletInstance.signMultipleTransactions(psbtBase64s);
-    debugLog(`✅ ${results.length} transactions signed via Magic Eden`);
+    debugLog(`Magic Eden: ${results.length} transactions signed`);
     return results;
   }
 
@@ -443,10 +443,10 @@ export class MagicEdenProvider extends BaseWalletProvider {
       // Call Magic Eden's direct sendBtcTransaction() method
       const txid = await this.walletInstance.sendBtcTransaction(request);
 
-      debugLog('✅ Magic Eden BTC sent');
+      debugLog('Magic Eden BTC sent');
       return txid;
     } catch (error) {
-      debugWarn('❌ Magic Eden send BTC failed');
+      debugWarn('Magic Eden send BTC failed');
       
       // Improve error messages
       let errorMessage = error.message || 'Unknown error';
@@ -486,7 +486,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
     try {
       return await this.walletInstance.isHardware();
     } catch (error) {
-      debugWarn('⚠️ isHardware method not supported');
+      debugWarn('isHardware method not supported');
       return false;
     }
   }
@@ -497,12 +497,12 @@ export class MagicEdenProvider extends BaseWalletProvider {
     }
 
     try {
-      debugLog(`🔍 Magic Eden RPC call: ${method}`);
+      debugLog(`Magic Eden RPC call: ${method}`);
       const result = await this.walletInstance.call(method, params);
-      debugLog('✅ Magic Eden RPC call succeeded');
+      debugLog('Magic Eden RPC call succeeded');
       return result;
     } catch (error) {
-      debugWarn('❌ Magic Eden RPC call failed');
+      debugWarn('Magic Eden RPC call failed');
       throw new Error(`RPC call failed: ${error.message}`);
     }
   }
@@ -519,7 +519,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
     
     // Account changes
     wallet.on('accountsChanged', (accounts) => {
-      debugLog('👤 Magic Eden accounts changed');
+      debugLog('Magic Eden accounts changed');
       
       if (!accounts || accounts.length === 0) {
         this.paymentAddress = null;
@@ -532,7 +532,7 @@ export class MagicEdenProvider extends BaseWalletProvider {
       }
     });
     
-    debugLog('✅ Magic Eden event listeners set up');
+    debugLog('Magic Eden event listeners set up');
   }
 
   removeEventListeners() {
